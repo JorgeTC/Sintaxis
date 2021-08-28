@@ -1,3 +1,6 @@
 __pycache__/
 *.xlsx
 !src/Readdata/Plantilla.xlsx
+
+# VS Code
+.vscode/
