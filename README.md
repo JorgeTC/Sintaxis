@@ -20,3 +20,8 @@ Remember adding a comma at the end of the line before yours.
 
 Execute ```main.py``` when the program asks you to press enter, write your name as you have written it in the json file.
 Press enter and the reading will start.
+---
+# Open a film written in the Excel file
+To identify the film, its id is provided in the first column.
+The id is a number of 6 digits.
+To go to its FilmAffinity page, write on your webbrowser ```https://www.filmaffinity.com/es/film``` + _id_ + ```.html```
