@@ -99,6 +99,10 @@ class Writer(object):
             # Avanzo a la siguiente página de películas vistas por el usuario
             self.next_page()
 
+        # Filtro las películas que están suspensas
+        rows_data = [row for row in rows_data if row[4] <= 5]
+        # Ordeno mis votaciones de mayor a menor
+        rows_data = list(sorted(rows_data, key=lambda item : item[1], reverse=True))
         df = DataFrame(rows_data,
                         columns=['Id', 'User Note', 'Duration', 'Voters', 'Note FA'])
 
