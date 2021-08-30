@@ -131,7 +131,7 @@ class Writer(object):
         self.set_cell_value(line, 10, str("=B" + str(line) + "+RAND()-0.5"))
         self.set_cell_value(line, 11, "=(B" + str(line) + "-1)*10/9")
         # En la primera columna guardo la id para poder reconocerla
-        self.set_cell_value(line, 1, int(film['Id']))
+        self.set_cell_value(line, 1, str(film['Id']))
 
         if (film['Duration'] != 0):
             # dejo la casilla en blanco si no logra leer ninguna duración de FA
@@ -167,6 +167,14 @@ class Writer(object):
         #reescala
         elif (col == 11 or col == 12):
             cell.number_format = '0.00'
+        # Id
+        elif (col == 1):
+            # Añado un hipervínculo a su página
+            cell.style = 'Hyperlink'
+            cell.hyperlink = "https://www.filmaffinity.com/es/film" + str(value) + ".html"
+            # Fuerzo el formato como texto
+            cell.number_format = '@'
+
 
     def next_film(self):
         self.film_index += 1
