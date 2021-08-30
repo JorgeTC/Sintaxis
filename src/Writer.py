@@ -105,7 +105,7 @@ class Writer(object):
         for index, row in df.iterrows():
             self.write_in_excel(index, row)
 
-    def read_film(self, film):
+    def read_film(self, film : Pelicula):
         # Hacemos la parte más lenta, que necesita parsear la página.
         film.get_time_and_FA()
 
