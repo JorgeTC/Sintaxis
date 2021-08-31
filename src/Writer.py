@@ -2,9 +2,9 @@ from bs4 import BeautifulSoup
 import concurrent.futures
 from openpyxl.styles import Alignment, Font
 from pandas.core.frame import DataFrame
-from src.ProgressBar import ProgressBar
-from src.safe_url import safe_get_url
-from src.Pelicula import Pelicula
+from .ProgressBar import ProgressBar
+from .safe_url import safe_get_url
+from .Pelicula import Pelicula
 from math import ceil
 
 class Writer(object):
@@ -78,7 +78,7 @@ class Writer(object):
 
     def read_watched(self):
         # Creo un objeto para hacer la gestión de paralelización
-        executor = concurrent.futures.ThreadPoolExecutor()
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=20)
         # Creo una lista de listas donde se guardarán los datos de las películas
         rows_data=[]
 
@@ -98,10 +98,6 @@ class Writer(object):
             # Avanzo a la siguiente página de películas vistas por el usuario
             self.next_page()
 
-        # Filtro las películas que están suspensas
-        rows_data = [row for row in rows_data if row[4] <= 5]
-        # Ordeno mis votaciones de mayor a menor
-        rows_data = list(sorted(rows_data, key=lambda item : item[1], reverse=True))
         df = DataFrame(rows_data,
                         columns=['Id', 'User Note', 'Duration', 'Voters', 'Note FA', 'Title'])
 
@@ -135,7 +131,7 @@ class Writer(object):
         self.set_cell_value(line, 10, str("=B" + str(line) + "+RAND()-0.5"))
         self.set_cell_value(line, 11, "=(B" + str(line) + "-1)*10/9")
         # En la primera columna guardo la id para poder reconocerla
-        self.set_cell_value(line, 1, str(film['Id']))
+        self.set_cell_value(line, 1, film['Title'], int(film['Id']))
 
         if (film['Duration'] != 0):
             # dejo la casilla en blanco si no logra leer ninguna duración de FA
@@ -153,7 +149,7 @@ class Writer(object):
             self.set_cell_value(line, 5, film['Voters'])
 
 
-    def set_cell_value(self, line, col, value):
+    def set_cell_value(self, line, col, value, id=0):
         cell = self.ws.cell(row = line, column=col)
         cell.value = value
         # Configuramos el estilo de la celda atendiendo a su columna
@@ -171,14 +167,13 @@ class Writer(object):
         #reescala
         elif (col == 11 or col == 12):
             cell.number_format = '0.00'
-        # Id
+        # Nombre de la película con un hipervínculo
         elif (col == 1):
             # Añado un hipervínculo a su página
             cell.style = 'Hyperlink'
-            cell.hyperlink = "https://www.filmaffinity.com/es/film" + str(value) + ".html"
+            cell.hyperlink = "https://www.filmaffinity.com/es/film" + str(id) + ".html"
             # Fuerzo el formato como texto
             cell.number_format = '@'
-
 
     def next_film(self):
         self.film_index += 1
