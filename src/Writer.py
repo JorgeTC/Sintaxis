@@ -1,4 +1,3 @@
-
 from bs4 import BeautifulSoup
 import concurrent.futures
 from openpyxl.styles import Alignment, Font
