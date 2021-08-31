@@ -27,7 +27,7 @@ def es_valida(titulo):
         return False
     if titulo.find("(Serie de TV)") > 0:
         return False
-    if titulo.find("(TV)") > 0:
+    #if titulo.find("(TV)") > 0:
         # Hay varios tipos de películas aquí.
         # Algunos son programas de televisón, otros estrenos directos a tele.
         # Hay también episosios concretos de series.
