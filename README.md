@@ -1,6 +1,6 @@
 # Sintaxis
 
-A program to scrap your votes from FilmAffintiy.
+A program to scrap your votes from FilmAffinity.
 The data will be stored in an Excel file.
 You will see some statistics about your votes.
 
