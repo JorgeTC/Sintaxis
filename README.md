@@ -1,8 +1,16 @@
 # Sintaxis
 
-The user whose movies are to be read must be entered. By default those of "Jorge" are read.
-To choose another user, simply enter the desired name.
-Those available are: 'Sasha', 'Jorge', 'Guillermo', 'Daniel Gallego', 'Luminador', 'Will_llermo', 'Roger Peris', 'Javi', 'El Feo', 'coleto'.
-The reading is slow and the program is not able to avoid the captcha.
-When FilmAffinity launches the captcha, a window will open in the browser for the user to pass the captcha. When it is done, scraping will continue.
-When finished, an excel will be generated with the data read.
+A program to scrap your votes from FilmAffintiy.
+The data will be stored in an Excel file.
+You will see some statistics about your votes.
+
+The available users are in `res/usuarios.json`.
+The user will be prompted at the beginning of the program.
+You can scroll through them with the arrow keys.
+
+FilmAffinity might launch its captcha to verify that we are not robots.
+I will try to fool it by opening a Chrome instance.
+If the Captcha is smarter than me, the scraping stops until a human passes the Captcha.
+
+The code uses the `win32api` library.
+This implies that it will run only in Windows.
