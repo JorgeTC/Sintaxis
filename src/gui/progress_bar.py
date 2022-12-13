@@ -1,6 +1,8 @@
 from time import time
 import sys
 
+from src.gui.gui import ConsoleEvent
+
 
 class Timer:
     def __init__(self):
@@ -21,18 +23,30 @@ class Timer:
         self.start = time()
 
 
-class ProgressBar:
-    def __init__(self):
+class ProgressBar(ConsoleEvent):
+    def __init__(self, iterations: int):
+        ConsoleEvent.__init__(self)
         self.__timer = Timer()
         self.barLength = 20
-        self.progress = 0.0
+        self.calls = 0
+        self.iterations = iterations
 
-    def update(self, done):
-        self.progress = float(done)
+    @property
+    def progress(self) -> float:
+        return float(self.calls) / float(self.iterations)
+
+    def execute(self):
+        self.calls += 1
         block = int(round(self.barLength * self.progress))
-        text = "[{0}] {1:.2f}% {2}\n".format( "="*block + " "*(self. barLength-block), self. progress*100, self.__timer.remains(self.progress))
+        text = "[{0}] {1:.2f}% {2}\n".format(
+            "=" * block + " " * (self. barLength-block),
+            self.progress * 100,
+            self.__timer.remains(self.progress))
         sys.stdout.write(text)
         sys.stdout.flush()
+
+    def update(self):
+        ConsoleEvent.execute_if_main_thread(self)
 
     def reset_timer(self):
         self.__timer.reset()

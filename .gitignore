@@ -145,7 +145,7 @@ dmypy.json
 cython_debug/
 
 *.xlsx
-!res/Plantilla.xlsx
+!res/Readdata/Plantilla.xlsx
 
 # VS Code
 .vscode/
