@@ -12,6 +12,7 @@ from src.excel.utils import is_valid, read_film
 from src.pelicula import Pelicula
 from src.safe_url import safe_get_url
 
+
 def transform_user_data(f):
     '''
     Se aplica a funciones cuyo primer argumento es `box_list: Iterable[BeautifulSoup]`
@@ -26,8 +27,8 @@ def transform_user_data(f):
 
 
 @transform_user_data
-def read_watched_user_data(box_list: Iterable[BeautifulSoup], *,
-                           use_multithread=Config.get_bool(Section.READDATA, Param.PARALLELIZE)) -> Iterable[tuple[Pelicula, float]]:
+def read_watched(box_list: Iterable[BeautifulSoup], *,
+                 use_multithread=Config.get_bool(Section.READDATA, Param.PARALLELIZE)) -> Iterable[tuple[Pelicula, float]]:
 
     # Lista de las películas válidas en la página actual.
     films_list = (init_film_from_movie_box(box) for box in box_list)
@@ -41,7 +42,7 @@ def read_watched_user_data(box_list: Iterable[BeautifulSoup], *,
 
 
 @transform_user_data
-def read_directors_user_data(box_list: Iterable[BeautifulSoup]) -> Iterable[tuple[Pelicula, float]]:
+def read_directors(box_list: Iterable[BeautifulSoup]) -> Iterable[tuple[Pelicula, float]]:
     # Lista de las películas válidas en la página actual.
     films_list = (init_director_from_movie_box(box) for box in box_list)
     return (film if is_valid(film) else None for film in films_list)
