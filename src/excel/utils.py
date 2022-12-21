@@ -3,6 +3,9 @@ from src.pelicula import Pelicula
 
 
 def read_film(film: Pelicula) -> Pelicula:
+    if film is None:
+        return None
+
     # Hacemos la parte más lenta, que necesita parsear la página.
     film.get_nota_FA()
     film.get_votantes_FA()

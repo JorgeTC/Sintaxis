@@ -1,7 +1,8 @@
 import re
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial, wraps
 from math import ceil
-from typing import Iterable
+from typing import Callable, Iterable
 
 from bs4 import BeautifulSoup, Tag
 
@@ -11,68 +12,51 @@ from src.excel.utils import is_valid, read_film
 from src.pelicula import Pelicula
 from src.safe_url import safe_get_url
 
+def transform_user_data(f):
+    '''
+    Se aplica a funciones cuyo primer argumento es `box_list: Iterable[BeautifulSoup]`
+    '''
 
-def read_watched(id_user: int, *,
-                 use_multithread=Config.get_bool(Section.READDATA, Param.PARALLELIZE)) -> Iterable[tuple[Pelicula, float]]:
+    @wraps(f)
+    def wrp(id_user: int, *args, **kwargs):
+        extract_data = partial(f, *args, **kwargs)
+        return read_user_data(id_user, extract_data)
 
-    # Votaciones en total
-    total_films = get_total_films(id_user)
-
-    # Creo un objeto para hacer la gestión de paralelización
-    executor = ThreadPoolExecutor(max_workers=20)
-
-    # Lista de todas las cajas de películas del usuario
-    film_list = get_all_boxes(id_user, total_films)
-    # Contador de películas leídas
-    film_index = 0
-
-    # Itero hasta que haya leído todas las películas
-    for page_boxes in film_list:
-        # Lista de las películas válidas en la página actual.
-        films_in_page = (init_film_from_movie_box(box)
-                         for box in page_boxes)
-        valid_film_list = (film for film in films_in_page
-                           if is_valid(film))
-
-        # Itero las películas en mi página actual
-        if use_multithread:
-            iter_film_data = executor.map(read_film, valid_film_list)
-        else:
-            iter_film_data = (read_film(film) for film in valid_film_list)
-
-        read_in_page = 0
-        for film_data in iter_film_data:
-            read_in_page += 1
-            yield film_data, (film_index + read_in_page)/total_films
-
-        # Avanzo a la siguiente página de películas vistas por el usuario
-        film_index = min(film_index + 20, total_films)
+    return wrp
 
 
-def read_directors(id_user: int) -> Iterable[tuple[Pelicula, float]]:
+@transform_user_data
+def read_watched_user_data(box_list: Iterable[BeautifulSoup], *,
+                           use_multithread=Config.get_bool(Section.READDATA, Param.PARALLELIZE)) -> Iterable[tuple[Pelicula, float]]:
+
+    # Lista de las películas válidas en la página actual.
+    films_list = (init_film_from_movie_box(box) for box in box_list)
+    valid_film_list = (film if is_valid(film) else None for film in films_list)
+
+    # Itero las películas en mi página actual
+    iter_film_data = ThreadPoolExecutor().map(read_film, valid_film_list) if use_multithread \
+        else (read_film(film) for film in valid_film_list)
+
+    return iter_film_data
+
+
+@transform_user_data
+def read_directors_user_data(box_list: Iterable[BeautifulSoup]) -> Iterable[tuple[Pelicula, float]]:
+    # Lista de las películas válidas en la página actual.
+    films_list = (init_director_from_movie_box(box) for box in box_list)
+    return (film if is_valid(film) else None for film in films_list)
+
+
+def read_user_data(id_user: int, f: Callable[[Iterable[BeautifulSoup]], Iterable[Pelicula | None]]) -> Iterable[tuple[Pelicula, float]]:
     # Votaciones en total
     total_films = get_total_films(id_user)
 
     # Lista de todas las cajas de películas del usuario
-    film_list = get_all_boxes(id_user, total_films)
-    # Contador de películas leídas
-    film_index = 0
+    box_list = get_all_boxes(id_user, total_films)
 
-    # Itero hasta que haya leído todas las películas
-    for page_boxes in film_list:
-        # Lista de las películas válidas en la página actual.
-        films_in_page = (init_director_from_movie_box(box)
-                         for box in page_boxes)
-        valid_film_list = (film for film in films_in_page
-                           if is_valid(film))
-
-        read_in_page = 0
-        for film_data in valid_film_list:
-            read_in_page += 1
-            yield film_data, (film_index + read_in_page)/total_films
-
-        # Avanzo a la siguiente página de películas vistas por el usuario
-        film_index = min(film_index + 20, total_films)
+    for film_index, film_data in enumerate(f(box_list)):
+        if film_data is not None:
+            yield film_data, film_index / total_films
 
 
 def get_total_films(id_user: int) -> int:
@@ -90,7 +74,13 @@ def get_total_films(id_user: int) -> int:
     return int(stringNumber)
 
 
-def get_all_boxes(user_id: int, total_films: int) -> Iterable[Iterable[BeautifulSoup]]:
+def get_all_boxes(user_id: int, total_films: int) -> Iterable[BeautifulSoup]:
+    for films_in_page in get_all_pages_boxes(user_id, total_films):
+        for box in films_in_page:
+            yield box
+
+
+def get_all_pages_boxes(user_id: int, total_films: int) -> Iterable[Iterable[BeautifulSoup]]:
     n_pages = ceil(total_films / 20)
     url_pages = (url_FA.URL_USER_PAGE(user_id, i + 1)
                  for i in range(n_pages))
