@@ -95,7 +95,8 @@ def list_boxes(url: str) -> Iterable[FilmBox]:
     # Guardo la página ya parseada
     soup_page = BeautifulSoup(resp.text, 'lxml')
     # Leo todas las películas que haya en ella
-    return [FilmBox(parsed_box) for parsed_box in soup_page.findAll("div", {"class": "user-ratings-movie"})]
+    return (FilmBox(parsed_box) for parsed_box in
+            soup_page.findAll("div", {"class": "user-ratings-movie"}))
 
 
 def init_film_from_movie_box(movie_box: FilmBox) -> Pelicula:
