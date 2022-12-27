@@ -152,3 +152,6 @@ cython_debug/
 
 # Archivo de configuración
 *.ini
+
+# Driver de Chrome
+chromedriver.exe
