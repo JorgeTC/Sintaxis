@@ -2,10 +2,7 @@ import math
 import re
 from functools import wraps
 
-from bs4 import BeautifulSoup
-
-from src.safe_url import safe_get_url
-from src.url_FA import URL_FILM_ID
+from src.pelicula.film_page import FilmPage
 
 
 def get_id_from_url(url: str) -> int:
@@ -13,10 +10,6 @@ def get_id_from_url(url: str) -> int:
     str_id = re.search(r"film(\d{6}).html", url).group(1)
 
     return int(str_id)
-
-
-# Cómo debo buscar la información de las barras
-RATING_BARS_PATTERN = re.compile(r'RatingBars.*?\[(.*?)\]')
 
 
 def scrap_data(att: str):
@@ -33,7 +26,7 @@ def scrap_data(att: str):
                 return
 
             # Antes de obtener el dato me aseguro de que la página haya sido parseada
-            if not self.parsed_page:
+            if not self.film_page:
                 self.get_parsed_page()
 
             fn(self, *args, **kwarg)
@@ -78,12 +71,7 @@ def scrap_from_values(att: str):
     return decorator
 
 
-def read_avg_note_from_page(page: BeautifulSoup) -> float:
-    search_avg = page.find(id="movie-rat-avg")
-    try:
-        return float(search_avg.attrs['content'])
-    except AttributeError:
-        return 0
+URL_FILM_ID = "https://www.filmaffinity.com/es/film{}.html".format
 
 
 class Pelicula:
@@ -94,7 +82,7 @@ class Pelicula:
         self.id: int = None
         self.url_FA: str = None
         self.url_image: str = None
-        self.parsed_page: BeautifulSoup = None
+        self.film_page: FilmPage = None
         self.nota_FA: float = None
         self.votantes_FA: int = None
         self.desvest_FA: float = None
@@ -104,7 +92,6 @@ class Pelicula:
         self.directors: list[str] = None
         self.año: int = None
         self.pais: str = None
-        self.__exists: bool = None
 
     @classmethod
     def from_id(cls, id: int) -> 'Pelicula':
@@ -141,89 +128,38 @@ class Pelicula:
 
     @scrap_data('votantes_FA')
     def get_votantes_FA(self):
-        # Me espero que la página ya haya sido parseada
-        l = self.parsed_page.find(itemprop="ratingCount")
-        try:
-            # guardo la cantidad de votantes en una ficha normal
-            self.votantes_FA = l.attrs['content']
-            # Elimino el punto de los millares
-            self.votantes_FA = self.votantes_FA.replace('.', '')
-            self.votantes_FA = int(self.votantes_FA)
-        except:
-            # caso en el que no hay suficientes votantes
-            self.votantes_FA = 0
+        self.votantes_FA = self.film_page.get_votantes_FA()
 
     @scrap_data('duracion')
     def get_duracion(self):
-        # Me espero que la página ya haya sido parseada
-        l = self.parsed_page.find(id="left-column")
-        try:
-            str_duracion = l.find(itemprop="duration").contents[0]
-            str_duracion = re.search(r'(\d+) +min.', str_duracion).group(1)
-            self.duracion = int(str_duracion)
-        except:
-            # caso en el que no está escrita la duración
-            self.duracion = 0
+        self.duracion = self.film_page.get_duracion()
 
     @scrap_data('pais')
     def get_country(self):
-        try:
-            self.pais = self.parsed_page.find(
-                id="country-img").contents[0].attrs['alt']
-        except:
-            return
+        self.pais = self.film_page.get_country()
 
     @scrap_data('titulo')
     def get_title(self):
-
-        l = self.parsed_page.find(itemprop="name")
-        self.titulo = l.contents[0]
+        self.titulo = self.film_page.get_title()
 
     def get_parsed_page(self):
-        resp = safe_get_url(self.url_FA)
-        if resp.status_code == 404:
-            self.__exists = False
-            # Si el id no es correcto, dejo de construir la clase
-            return
-        self.__exists = True
-
-        # Parseo la página
-        self.parsed_page = BeautifulSoup(resp.text, 'lxml')
+        self.film_page = FilmPage(self.url_FA)
 
     @scrap_data('directors')
     def get_director(self):
-
-        tag_directors = self.parsed_page.find_all(itemprop="director")
-        self.directors = [tag.contents[0].contents[0].contents[0]
-                          for tag in tag_directors]
+        self.directors = self.film_page.get_director()
 
     @scrap_data('año')
     def get_año(self):
-
-        l = self.parsed_page.find(itemprop="datePublished")
-        self.año = l.contents[0]
+        self.año = self.film_page.get_año()
 
     @scrap_data('values')
     def get_values(self):
-        # Recopilo los datos específicos de la varianza:
-        script = self.parsed_page.find("script", string=RATING_BARS_PATTERN)
-        if not script:
-            self.values = []
-            return
-
-        # Extraigo cuánto vale cada barra
-        bars = RATING_BARS_PATTERN.search(script.string).group(1)
-        values = [int(s) for s in bars.split(',')]
-        # Las ordeno poniendo primero las notas más bajas
-        values.reverse()
-        # Me aseguro que todos los datos sean positivos
-        self.values = [max(value, 0) for value in values]
+        self.values = self.film_page.get_values()
 
     @scrap_data('url_image')
     def get_image_url(self):
-
-        self.url_image = self.parsed_page.find(
-            "meta", property="og:image")['content']
+        self.url_image = self.film_page.get_image_url()
 
     @scrap_from_values('desvest_FA')
     def get_desvest(self):
@@ -253,7 +189,7 @@ class Pelicula:
         self.prop_aprobados = positives / total_votes
 
     def exists(self) -> bool:
-        return self.__exists
+        return self.film_page.exists
 
     @property
     def director(self) -> str:

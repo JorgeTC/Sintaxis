@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from random import randint
-from typing import Iterable
+from typing import Iterable, Optional
 
 from src.config import Config, Param, Section
 from src.excel.utils import is_valid, read_film
@@ -38,33 +38,33 @@ def read_sample(*,
 
     while rnd.size:
         # Lista de las películas válidas en la página actual.
-        valid_film_list = (Pelicula.from_id(id)
-                           for id in rnd.get_ids_lot(50))
+        film_list = (Pelicula.from_id(id)
+                     for id in rnd.get_ids_lot(125))
 
         # Itero las películas en mi página actual
         if use_multithread:
             iter_film_data = executor.map(
-                read_film_if_valid, valid_film_list)
+                read_film_if_valid, film_list)
         else:
             iter_film_data = (read_film_if_valid(film)
-                              for film in valid_film_list)
+                              for film in film_list)
 
         for film_data in iter_film_data:
-            if film_data.nota_FA:
+            if film_data and film_data.nota_FA:
                 yield film_data
 
 
-def read_film_if_valid(film: Pelicula) -> Pelicula:
+def read_film_if_valid(film: Pelicula) -> Optional[Pelicula]:
 
-    # Si la película no es válida devuelvo una tupla vacía
+    # Si la película no es válida no devuelvo nada
     if not has_valid_id(film):
-        return Pelicula()
+        return None
 
-    # Es válida, devuelvo la tupla habitual
+    # Es válida, devuelvo la película con los datos rellenos
     try:
         return read_film(film)
     except:
-        return Pelicula()
+        return None
 
 
 def has_valid_id(film: Pelicula) -> bool:

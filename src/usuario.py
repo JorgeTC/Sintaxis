@@ -2,7 +2,7 @@ import ast
 
 from src.aux_res_directory import get_res_folder
 from src.config import Config, Param, Section
-from src.gui import DlgScrollBase
+from src.gui.dlg_scroll_base import DlgScrollBase
 
 
 def load_users_id() -> dict[str, int]:

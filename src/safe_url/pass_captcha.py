@@ -1,11 +1,11 @@
 import time
 import webbrowser
+from multiprocessing import Lock
 
 import requests
 from requests.models import Response
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
-from multiprocessing import Lock
 
 from src.safe_url.chrome_driver import get_chrome_instance
 

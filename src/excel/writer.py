@@ -1,13 +1,13 @@
 import enum
 
+from openpyxl.cell import Cell
 from openpyxl.styles import Alignment, Font
 from openpyxl.worksheet import worksheet
 
-import src.url_FA as url_FA
 from src.excel.read_sample import read_sample
-from src.excel.read_watched import read_watched
-from src.pelicula import Pelicula
-from src.progress_bar import ProgressBar
+from src.excel.read_watched import read_data
+from src.pelicula import URL_FILM_ID, Pelicula
+from src.gui import ProgressBar
 
 
 class ExcelColumns(int, enum.Enum):
@@ -61,17 +61,13 @@ class Writer:
 
     def write_watched(self, id_user: int):
 
-        # Creo una barra de progreso
-        bar = ProgressBar()
-
         # Inicializo la fila actual en la que estoy escribiendo
         index = 0
-        for film_data, progress in read_watched(id_user):
+        bar = ProgressBar()
+        for film_data, progress in read_data(id_user):
             self.__write_in_excel(index, film_data)
             index += 1
             bar.update(progress)
-
-        bar.update(1)
 
     def __write_in_excel(self, line: int, film: Pelicula):
 
@@ -129,7 +125,7 @@ class Writer:
     def __set_cell_value(self, line: int, col: ExcelColumns, value, *, id=0):
 
         # Obtengo un objeto celda
-        cell = self.ws.cell(row=line, column=col)
+        cell: Cell = self.ws.cell(row=line, column=col)
         # Le asigno el valor
         cell.value = value
 
@@ -165,6 +161,6 @@ class Writer:
         elif (col == ExcelColumns.Id):
             # Añado un hipervínculo a su página
             cell.style = 'Hyperlink'
-            cell.hyperlink = url_FA.URL_FILM_ID(id)
+            cell.hyperlink = URL_FILM_ID(id)
             # Fuerzo el formato como texto
             cell.number_format = '@'
