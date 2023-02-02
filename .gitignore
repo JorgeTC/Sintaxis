@@ -145,10 +145,13 @@ dmypy.json
 cython_debug/
 
 *.xlsx
-!res/Plantilla.xlsx
+!res/Readdata/Plantilla.xlsx
 
 # VS Code
 .vscode/
 
 # Archivo de configuración
 *.ini
+
+# Driver de Chrome
+chromedriver.exe
